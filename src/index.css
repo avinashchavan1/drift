@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #fff;
+  color: #1e293b;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
+
+/* ─── Task row completion slide-out ─────────────────────── */
+@keyframes taskOut {
+  from { opacity: 1; max-height: 64px; transform: translateX(0);   }
+  to   { opacity: 0; max-height: 0;    transform: translateX(12px); overflow: hidden; padding: 0; }
+}
+.task-out {
+  animation: taskOut 200ms ease-out forwards;
+}
+
+/* ─── New task slide-in ──────────────────────────────────── */
+@keyframes taskIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.task-in {
+  animation: taskIn 140ms ease-out both;
+}
