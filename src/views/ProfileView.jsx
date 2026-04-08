@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { LogOut, Mail, User, Edit2, Check, X, UserPlus, ChevronRight } from 'lucide-react';
+import { LogOut, Mail, User, Edit2, Check, X, UserPlus, ChevronRight, Bell, BellOff, BellRing, Send, Clock, AlertTriangle, Sun } from 'lucide-react';
 import { useTasks } from '../hooks/useTasks';
 import { useAuth } from '../hooks/useAuth';
 import { getCategoryColor } from '../utils/parseInput';
+import { useNotifications } from '../hooks/useNotifications';
 
 function Avatar({ name, size = 80 }) {
   const initials = name
@@ -47,6 +48,147 @@ function StatCard({ label, value, gradient }) {
       <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-faint)', margin: 0 }}>
         {label}
       </p>
+    </div>
+  );
+}
+
+function NotificationSettings() {
+  const { supported, permission, subscribed, prefs, loading, requestAndSubscribe, unsubscribe, updatePrefs, sendTest } = useNotifications();
+  const [testSent, setTestSent] = useState(false);
+
+  if (!supported) {
+    return (
+      <div style={{ marginBottom: 28 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-faint)', marginBottom: 10 }}>Notifications</p>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border-subtle)', borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <BellOff size={16} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Push notifications are not supported in this browser.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const handleToggle = async () => {
+    if (subscribed) { await unsubscribe(); }
+    else            { await requestAndSubscribe(prefs); }
+  };
+
+  const handleTest = async () => {
+    const ok = await sendTest();
+    if (ok) { setTestSent(true); setTimeout(() => setTestSent(false), 3000); }
+  };
+
+  const NOTIF_TYPES = [
+    { key: 'dueSoon',       label: 'Due soon',       desc: '30 min before a task is due',       icon: Clock },
+    { key: 'overdueAlerts', label: 'Overdue alerts',  desc: 'When tasks become overdue',          icon: AlertTriangle },
+    { key: 'dailyDigest',   label: 'Daily digest',    desc: "8 AM summary of today's tasks",     icon: Sun },
+  ];
+
+  return (
+    <div style={{ marginBottom: 28 }}>
+      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-faint)', marginBottom: 10 }}>
+        Notifications
+      </p>
+
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border-subtle)', borderRadius: 14, overflow: 'hidden' }}>
+
+        {/* Main toggle row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: subscribed ? '1px solid var(--border-subtle)' : 'none' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
+              background: subscribed ? 'var(--accent-bg)' : 'var(--surface-input)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              {subscribed
+                ? <BellRing size={16} style={{ color: 'var(--accent)' }} />
+                : <Bell     size={16} style={{ color: 'var(--text-muted)' }} />}
+            </div>
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+                {subscribed ? 'Notifications on' : 'Enable notifications'}
+              </p>
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                {subscribed ? 'Tap to turn off' : permission === 'denied' ? 'Blocked — allow in browser settings' : 'Get reminders on any device'}
+              </p>
+            </div>
+          </div>
+
+          {/* Toggle switch */}
+          <button
+            onClick={handleToggle}
+            disabled={loading || permission === 'denied'}
+            style={{
+              width: 44, height: 26, borderRadius: 13, border: 'none', cursor: loading ? 'default' : 'pointer',
+              background: subscribed ? 'var(--accent)' : 'var(--border)',
+              position: 'relative', transition: 'background .2s', flexShrink: 0,
+              opacity: permission === 'denied' ? 0.4 : 1,
+            }}
+          >
+            <div style={{
+              position: 'absolute', top: 3, left: subscribed ? 21 : 3,
+              width: 20, height: 20, borderRadius: '50%', background: '#fff',
+              transition: 'left .2s', boxShadow: '0 1px 3px rgba(0,0,0,.3)',
+            }} />
+          </button>
+        </div>
+
+        {/* Notification type checkboxes — only when subscribed */}
+        {subscribed && (
+          <>
+            {NOTIF_TYPES.map(({ key, label, desc, icon: Icon }, i) => (
+              <div
+                key={key}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '12px 16px',
+                  borderBottom: i < NOTIF_TYPES.length - 1 ? '1px solid var(--border-subtle)' : 'none',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <Icon size={14} style={{ color: 'var(--text-faint)', flexShrink: 0 }} />
+                  <div>
+                    <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>{label}</p>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '1px 0 0' }}>{desc}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => updatePrefs({ [key]: !prefs[key] })}
+                  style={{
+                    width: 36, height: 20, borderRadius: 10, border: 'none', cursor: 'pointer', flexShrink: 0,
+                    background: prefs[key] ? 'var(--accent)' : 'var(--border)',
+                    position: 'relative', transition: 'background .2s',
+                  }}
+                >
+                  <div style={{
+                    position: 'absolute', top: 2, left: prefs[key] ? 17 : 2,
+                    width: 16, height: 16, borderRadius: '50%', background: '#fff',
+                    transition: 'left .2s', boxShadow: '0 1px 2px rgba(0,0,0,.2)',
+                  }} />
+                </button>
+              </div>
+            ))}
+
+            {/* Test notification button */}
+            <button
+              onClick={handleTest}
+              disabled={loading}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                width: '100%', padding: '12px 16px',
+                borderTop: '1px solid var(--border-subtle)',
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: 13, fontWeight: 500,
+                color: testSent ? '#22c55e' : 'var(--accent)',
+              }}
+            >
+              {testSent
+                ? <><Check size={14} /> Notification sent!</>
+                : <><Send size={13} /> Send test notification</>}
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -210,6 +352,9 @@ export default function ProfileView({ onLogout, onAddAccount, onSwitchAccount })
           </p>
         )}
       </div>
+
+      {/* Notification settings */}
+      <NotificationSettings />
 
       {/* Account switcher */}
       <div style={{ marginBottom: 16 }}>
