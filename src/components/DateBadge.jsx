@@ -1,10 +1,10 @@
 import { format, isToday, isTomorrow, isPast, startOfDay } from 'date-fns';
 
 const STYLES = {
-  overdue:  { bg: '#fef2f2', text: '#ef4444', border: '#fecaca' },
-  today:    { bg: '#fff7ed', text: '#f97316', border: '#fed7aa' },
-  tomorrow: { bg: '#eff6ff', text: '#3b82f6', border: '#bfdbfe' },
-  future:   { bg: '#f8fafc', text: '#64748b', border: '#e2e8f0' },
+  overdue:  { bg: 'var(--badge-overdue-bg)',  text: 'var(--badge-overdue-text)',  border: 'var(--badge-overdue-border)' },
+  today:    { bg: 'var(--badge-today-bg)',    text: 'var(--badge-today-text)',    border: 'var(--badge-today-border)' },
+  tomorrow: { bg: 'var(--badge-tomorrow-bg)', text: 'var(--badge-tomorrow-text)', border: 'var(--badge-tomorrow-border)' },
+  future:   { bg: 'var(--badge-future-bg)',   text: 'var(--badge-future-text)',   border: 'var(--badge-future-border)' },
 };
 
 export default function DateBadge({ dueDate, compact = false }) {

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/* No web-font import — Instagram uses the system font stack */
 @import "tailwindcss";
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -9,33 +9,132 @@ html, body, #root {
   padding: 0;
 }
 
+/* ─── Instagram Light Theme ─────────────────────────────── */
+/* Source: INSTAGRAM_DESIGN.md                               */
+:root, [data-theme="light"] {
+  --bg:             #FFFFFF;
+  --surface:        #FFFFFF;
+  --surface-hover:  #FAFAFA;
+  --surface-input:  #EFEFEF;
+  --border:         #DBDBDB;
+  --border-subtle:  #EFEFEF;
+  --border-strong:  #DBDBDB;
+  --text-primary:   #000000;
+  --text-secondary: #737373;
+  --text-muted:     #8E8E8E;
+  --text-faint:     #C7C7C7;
+  --accent:         #0095F6;
+  --accent-bg:      #E0F1FF;
+  --accent-text:    #00376B;
+  --danger:         #FF3040;
+  --danger-bg:      #FFF0F1;
+  --scrim:          rgba(0, 0, 0, 0.50);
+  --nav-bg:         #FFFFFF;
+  --ig-gradient:    linear-gradient(45deg, #405DE6, #833AB4, #C13584, #E1306C, #FD1D1D, #FCAF45);
+
+  /* ── Instagram gradient category colours (light) ── */
+  --cat-work-bg:       #ECEFFE;  --cat-work-text:     #405DE6;  --cat-work-dot:     #405DE6;
+  --cat-personal-bg:   #F4ECFA;  --cat-personal-text: #833AB4;  --cat-personal-dot: #833AB4;
+  --cat-social-bg:     #FAECF4;  --cat-social-text:   #C13584;  --cat-social-dot:   #C13584;
+  --cat-health-bg:     #FDECF2;  --cat-health-text:   #C13584;  --cat-health-dot:   #E1306C;
+  --cat-finance-bg:    #FFF0EE;  --cat-finance-text:  #C0391B;  --cat-finance-dot:  #FD1D1D;
+  --cat-learning-bg:   #FEF7E8;  --cat-learning-text: #B5740A;  --cat-learning-dot: #FCAF45;
+  --cat-default-bg:    #EFEFEF;  --cat-default-text:  #737373;  --cat-default-dot:  #DBDBDB;
+
+  /* ── Status date badges (light) ── */
+  --badge-overdue-bg:    #FFF0F1;  --badge-overdue-text:    #FF3040;  --badge-overdue-border:    #FFADB3;
+  --badge-today-bg:      #FFF7ED;  --badge-today-text:      #FCAF45;  --badge-today-border:      #FCAF45;
+  --badge-tomorrow-bg:   #E0F1FF;  --badge-tomorrow-text:   #0095F6;  --badge-tomorrow-border:   #93CFFA;
+  --badge-future-bg:     #FAFAFA;  --badge-future-text:     #737373;  --badge-future-border:     #DBDBDB;
+
+  /* ── Section group label colours (light) ── */
+  --group-red-dot:    #FF3040;  --group-red-text:    #FF3040;
+  --group-orange-dot: #FCAF45;  --group-orange-text: #FCAF45;
+  --group-gray-dot:   #737373;  --group-gray-text:   #737373;
+  --group-blue-dot:   #0095F6;  --group-blue-text:   #0095F6;
+}
+
+/* ─── Instagram Dark Theme ──────────────────────────────── */
+[data-theme="dark"] {
+  --bg:             #000000;
+  --surface:        #121212;
+  --surface-hover:  #1A1A1A;
+  --surface-input:  #262626;
+  --border:         #262626;
+  --border-subtle:  #1A1A1A;
+  --border-strong:  #363636;
+  --text-primary:   #F5F5F5;
+  --text-secondary: #A8A8A8;
+  --text-muted:     #737373;
+  --text-faint:     #3F3F3F;
+  --accent:         #0095F6;
+  --accent-bg:      #003352;
+  --accent-text:    #0095F6;
+  --danger:         #FF3040;
+  --danger-bg:      #3D0A10;
+  --scrim:          rgba(0, 0, 0, 0.80);
+  --nav-bg:         #000000;
+  --ig-gradient:    linear-gradient(45deg, #405DE6, #833AB4, #C13584, #E1306C, #FD1D1D, #FCAF45);
+
+  /* ── Instagram gradient category colours (dark) ── */
+  --cat-work-bg:       #0D1033;  --cat-work-text:     #8B96E9;  --cat-work-dot:     #405DE6;
+  --cat-personal-bg:   #1E0733;  --cat-personal-text: #C084FC;  --cat-personal-dot: #833AB4;
+  --cat-social-bg:     #330A1F;  --cat-social-text:   #E07BB8;  --cat-social-dot:   #C13584;
+  --cat-health-bg:     #3D0A1A;  --cat-health-text:   #F472B6;  --cat-health-dot:   #E1306C;
+  --cat-finance-bg:    #3D0800;  --cat-finance-text:  #FC8A7A;  --cat-finance-dot:  #FD1D1D;
+  --cat-learning-bg:   #3D2800;  --cat-learning-text: #FCAF45;  --cat-learning-dot: #FCAF45;
+  --cat-default-bg:    #262626;  --cat-default-text:  #A8A8A8;  --cat-default-dot:  #3F3F3F;
+
+  /* ── Status date badges (dark) ── */
+  --badge-overdue-bg:    #3D0A10;  --badge-overdue-text:    #FF3040;  --badge-overdue-border:    #7A1520;
+  --badge-today-bg:      #3D2800;  --badge-today-text:      #FCAF45;  --badge-today-border:      #7A5000;
+  --badge-tomorrow-bg:   #003352;  --badge-tomorrow-text:   #0095F6;  --badge-tomorrow-border:   #004E7A;
+  --badge-future-bg:     #1A1A1A;  --badge-future-text:     #737373;  --badge-future-border:     #262626;
+
+  /* ── Section group label colours (dark) ── */
+  --group-red-dot:    #FF3040;  --group-red-text:    #FF3040;
+  --group-orange-dot: #FCAF45;  --group-orange-text: #FCAF45;
+  --group-gray-dot:   #3F3F3F;  --group-gray-text:   #737373;
+  --group-blue-dot:   #0095F6;  --group-blue-text:   #0095F6;
+}
+
+/* ─── Base ───────────────────────────────────────────────── */
+button, a {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Instagram system font stack — no web fonts */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #fff;
-  color: #1e293b;
+  background: var(--bg);
+  color: var(--text-primary);
 }
 
 /* ─── Scrollbar ─────────────────────────────────────────── */
 ::-webkit-scrollbar       { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
 /* ─── Task row completion slide-out ─────────────────────── */
 @keyframes taskOut {
-  from { opacity: 1; max-height: 64px; transform: translateX(0);   }
+  from { opacity: 1; max-height: 64px; transform: translateX(0); }
   to   { opacity: 0; max-height: 0;    transform: translateX(12px); overflow: hidden; padding: 0; }
 }
-.task-out {
-  animation: taskOut 200ms ease-out forwards;
-}
+.task-out { animation: taskOut 200ms ease-out forwards; }
 
 /* ─── New task slide-in ──────────────────────────────────── */
 @keyframes taskIn {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.task-in {
-  animation: taskIn 140ms ease-out both;
+.task-in { animation: taskIn 140ms ease-out both; }
+
+/* ─── Add-task bottom sheet slide-up ────────────────────── */
+@keyframes sheetIn {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
 }
+.sheet-in { animation: sheetIn 0.3s cubic-bezier(0.32, 0.72, 0, 1) both; }

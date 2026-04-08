@@ -1,6 +1,6 @@
 import { addDays, startOfDay } from 'date-fns';
 
-const STORAGE_KEY = 'flowlist_tasks';
+const STORAGE_KEY = 'drift_tasks';
 
 const SAMPLE_TASKS = [
   {

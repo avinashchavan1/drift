@@ -1,10 +1,8 @@
-// Simple section — no card wrapping, just a label + divider + task list
-
 const COLORS = {
-  red:    { dot: '#f87171', text: '#ef4444' },
-  orange: { dot: '#fb923c', text: '#f97316' },
-  gray:   { dot: '#94a3b8', text: '#94a3b8' },
-  blue:   { dot: '#60a5fa', text: '#3b82f6' },
+  red:    { dot: 'var(--group-red-dot)',    text: 'var(--group-red-text)' },
+  orange: { dot: 'var(--group-orange-dot)', text: 'var(--group-orange-text)' },
+  gray:   { dot: 'var(--group-gray-dot)',   text: 'var(--group-gray-text)' },
+  blue:   { dot: 'var(--group-blue-dot)',   text: 'var(--group-blue-text)' },
 };
 
 export default function TaskGroup({ label, count, color = 'gray', children }) {
@@ -27,15 +25,15 @@ export default function TaskGroup({ label, count, color = 'gray', children }) {
         >
           {label}
         </span>
-        <span className="text-[11px] font-medium" style={{ color: '#cbd5e1' }}>{count}</span>
+        <span className="text-[11px] font-medium" style={{ color: 'var(--text-faint)' }}>{count}</span>
       </div>
 
       {/* Tasks */}
-      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #f1f5f9' }}>
+      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
         {items.map((child, i) => (
           <div
             key={child.key ?? i}
-            style={i > 0 ? { borderTop: '1px solid #f8fafc' } : {}}
+            style={i > 0 ? { borderTop: '1px solid var(--border-subtle)' } : {}}
           >
             {child}
           </div>

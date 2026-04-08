@@ -1,16 +1,22 @@
-import { CheckSquare, Calendar, Zap } from 'lucide-react';
+import { CheckSquare, Calendar, Zap, User } from 'lucide-react';
 
 const ITEMS = [
   { id: 'today',    label: 'Today',    icon: CheckSquare },
   { id: 'upcoming', label: 'Upcoming', icon: Calendar },
   { id: 'focus',    label: 'Focus',    icon: Zap },
+  { id: 'profile',  label: 'Profile',  icon: User },
 ];
 
 export default function MobileNav({ view, onViewChange }) {
   return (
     <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 flex z-50"
-      style={{ background: '#fff', borderTop: '1px solid #f1f5f9' }}
+      style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0,
+        display: 'flex', zIndex: 50,
+        background: 'var(--nav-bg)',
+        borderTop: '1px solid var(--border)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      }}
     >
       {ITEMS.map(({ id, label, icon: Icon }) => {
         const active = view === id;
@@ -18,11 +24,37 @@ export default function MobileNav({ view, onViewChange }) {
           <button
             key={id}
             onClick={() => onViewChange(id)}
-            className="flex-1 flex flex-col items-center gap-1 py-3 transition-colors"
-            style={{ color: active ? '#3b82f6' : '#94a3b8' }}
+            style={{
+              flex: 1, display: 'flex', flexDirection: 'column',
+              alignItems: 'center', gap: 3, padding: '10px 0 12px',
+              background: 'none', border: 'none', cursor: 'pointer',
+            }}
           >
-            <Icon size={20} strokeWidth={active ? 2.5 : 2} />
-            <span style={{ fontSize: 11, fontWeight: active ? 600 : 400 }}>{label}</span>
+            {active ? (
+              <>
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  background: 'var(--ig-gradient)',
+                  borderRadius: 10, padding: '5px 6px',
+                }}>
+                  <Icon size={17} strokeWidth={2.5} style={{ color: '#fff' }} />
+                </span>
+                <span style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: '-0.01em',
+                  background: 'var(--ig-gradient)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}>
+                  {label}
+                </span>
+              </>
+            ) : (
+              <>
+                <Icon size={22} strokeWidth={1.8} style={{ color: 'var(--text-muted)' }} />
+                <span style={{ fontSize: 10, fontWeight: 400, color: 'var(--text-muted)' }}>{label}</span>
+              </>
+            )}
           </button>
         );
       })}

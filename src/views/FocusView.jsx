@@ -1,147 +1,263 @@
-import { useMemo, useState } from 'react';
-import { Check, Zap, ArrowRight } from 'lucide-react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
+import { Check, Zap, Play, Pause, RotateCcw, Flag } from 'lucide-react';
+
+const PRIORITY_COLOR = { high: '#E1306C', medium: '#FCAF45', low: '#405DE6' };
 import DateBadge from '../components/DateBadge';
 import CategoryChip from '../components/CategoryChip';
 import { useTasks, useCompleteTask } from '../hooks/useTasks';
 
-export default function FocusView({ onCategoryClick }) {
-  const { data: tasks = [] }    = useTasks();
-  const completeTask            = useCompleteTask();
-  const [completingId, setId]   = useState(null);
-  const [session, setSession]   = useState(false);
+const POMODORO = 25 * 60; // 25 minutes in seconds
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+export default function FocusView({ onCategoryClick, onViewChange }) {
+  const { data: tasks = [] } = useTasks();
+  const completeTask         = useCompleteTask();
+  const [completingId, setId] = useState(null);
+
+  // Timer
+  const [timeLeft, setTimeLeft] = useState(POMODORO);
+  const [running,  setRunning]  = useState(false);
+
+  useEffect(() => {
+    if (!running || timeLeft === 0) return;
+    const t = setTimeout(() => setTimeLeft(s => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [running, timeLeft]);
+
+  const reset = useCallback(() => { setRunning(false); setTimeLeft(POMODORO); }, []);
+
+  const PRIORITY_RANK = { high: 3, medium: 2, low: 1 };
+  const byPriority = (a, b) => (PRIORITY_RANK[b.priority] || 0) - (PRIORITY_RANK[a.priority] || 0);
 
   const top3 = useMemo(() => {
     const active   = tasks.filter(t => !t.completed);
-    const withDate = active.filter(t =>  t.dueDate).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
-    const noDate   = active.filter(t => !t.dueDate).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const withDate = active.filter(t =>  t.dueDate).sort((a, b) => byPriority(a, b) || new Date(a.dueDate) - new Date(b.dueDate));
+    const noDate   = active.filter(t => !t.dueDate).sort((a, b) => byPriority(a, b) || new Date(b.createdAt) - new Date(a.createdAt));
     return [...withDate, ...noDate].slice(0, 3);
   }, [tasks]);
+
+  const remaining = tasks.filter(t => !t.completed).length - top3.length;
 
   const handleComplete = id => {
     setId(id);
     setTimeout(() => { completeTask.mutate(id); setId(null); }, 220);
   };
 
+  const mins    = Math.floor(timeLeft / 60);
+  const secs    = timeLeft % 60;
+  const isDone  = timeLeft === 0;
+  const pct     = Math.round(((POMODORO - timeLeft) / POMODORO) * 100);
+
   return (
-    <div style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 0' }}>
-      <div style={{ width: '100%', maxWidth: 440 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
 
-        {/* Header */}
-        <div className="text-center" style={{ marginBottom: 40 }}>
-          <div className="inline-flex items-center gap-1.5 rounded-full mb-4"
-            style={{ background: '#eff6ff', color: '#3b82f6', padding: '6px 14px' }}>
-            <Zap size={12} fill="currentColor" />
-            <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Focus Mode</span>
-          </div>
-          <h1 className="font-semibold tracking-tight text-slate-900" style={{ fontSize: 28, lineHeight: 1.2, marginBottom: 8 }}>
-            {top3.length > 0 ? 'Top priorities' : 'All done!'}
-          </h1>
-          <p style={{ fontSize: 13, color: '#94a3b8' }}>
-            {top3.length > 0
-              ? 'Focus here. Everything else can wait.'
-              : 'Nothing left to do. Great work 🎉'}
-          </p>
+      {/* Header */}
+      <div style={{ textAlign: 'center' }}>
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          borderRadius: 9999, marginBottom: 12,
+          background: 'var(--ig-gradient)', color: '#fff',
+          padding: '6px 14px',
+        }}>
+          <Zap size={12} fill="currentColor" />
+          <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Focus Mode</span>
         </div>
+        <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 6, color: 'var(--text-primary)' }}>
+          {top3.length > 0 ? 'Your top priorities' : 'Nothing to focus on'}
+        </h1>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+          {top3.length > 0
+            ? 'Work through these one at a time. Start with #1.'
+            : 'Add some tasks and come back here to focus.'}
+        </p>
+      </div>
 
-        {/* Cards */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 36 }}>
+      {/* Task cards */}
+      {top3.length > 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {top3.map((task, i) => (
             <div
               key={task.id}
               style={{
                 opacity: completingId === task.id ? 0 : 1,
-                transform: completingId === task.id ? 'scale(0.97)' : 'scale(1)',
+                transform: completingId === task.id ? 'translateX(40px)' : 'none',
                 transition: 'opacity .2s, transform .2s',
               }}
             >
-              <div
-                style={{
-                  background: '#fff',
-                  borderRadius: 16,
-                  border: i === 0 ? '1.5px solid #bfdbfe' : '1.5px solid #f1f5f9',
-                  boxShadow: i === 0 ? '0 2px 12px rgba(59,130,246,0.08)' : '0 1px 4px rgba(0,0,0,0.04)',
-                  padding: '16px 18px',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 14,
-                }}
-              >
-                {/* Rank badge */}
+              <div style={{
+                background: 'var(--surface)',
+                borderRadius: 16,
+                border: i === 0 ? '1.5px solid var(--accent)' : '1.5px solid var(--border)',
+                boxShadow: i === 0 ? '0 2px 12px rgba(0,149,246,0.08)' : 'none',
+                padding: '14px 16px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 12,
+              }}>
+                {/* Rank */}
                 <span style={{
-                  width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
+                  width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 11, fontWeight: 700, marginTop: 1,
-                  background: i === 0 ? '#3b82f6' : '#f1f5f9',
-                  color:      i === 0 ? '#fff'    : '#94a3b8',
+                  fontSize: 12, fontWeight: 700, marginTop: 1,
+                  background: i === 0 ? 'var(--ig-gradient)' : 'var(--surface-input)',
+                  color: i === 0 ? '#fff' : 'var(--text-muted)',
                 }}>
                   {i + 1}
                 </span>
 
                 {/* Content */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 14, fontWeight: 500, color: '#1e293b', lineHeight: 1.4, marginBottom: 8 }}>
+                  <p style={{
+                    fontSize: i === 0 ? 15 : 14,
+                    fontWeight: i === 0 ? 600 : 500,
+                    color: 'var(--text-primary)',
+                    lineHeight: 1.4, marginBottom: task.dueDate || task.category ? 7 : 0,
+                  }}>
                     {task.title}
                   </p>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-                    {task.dueDate  && <DateBadge dueDate={task.dueDate} />}
-                    {task.category && <CategoryChip category={task.category} onClick={() => onCategoryClick?.(task.category)} />}
-                  </div>
+                  {(task.dueDate || task.category) && (
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                      {task.priority && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, fontWeight: 600, color: PRIORITY_COLOR[task.priority] }}>
+                          <Flag size={10} fill="currentColor" />
+                          {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                        </span>
+                      )}
+                      {task.dueDate  && <DateBadge dueDate={task.dueDate} />}
+                      {task.category && <CategoryChip category={task.category} onClick={() => onCategoryClick?.(task.category)} />}
+                    </div>
+                  )}
                 </div>
 
-                {/* Complete button */}
+                {/* Complete */}
                 <button
                   onClick={() => handleComplete(task.id)}
+                  title="Mark done"
                   style={{
                     width: 32, height: 32, borderRadius: '50%', flexShrink: 0, marginTop: 1,
-                    border: '2px solid #e2e8f0', background: '#fff', cursor: 'pointer',
+                    border: '2px solid var(--border-strong)', background: 'var(--surface)', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     transition: 'border-color .15s, background .15s',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#93c5fd'; e.currentTarget.style.background = '#eff6ff'; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = '#fff'; }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = 'var(--accent-bg)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-strong)'; e.currentTarget.style.background = 'var(--surface)'; }}
                 >
-                  <Check size={13} strokeWidth={3} style={{ color: '#cbd5e1' }} />
+                  <Check size={13} strokeWidth={3} style={{ color: 'var(--text-faint)' }} />
                 </button>
               </div>
             </div>
           ))}
 
-          {top3.length === 0 && (
-            <div className="text-center" style={{ padding: '32px 0' }}>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
-              <p style={{ fontSize: 15, fontWeight: 500, color: '#475569' }}>You're all caught up!</p>
-            </div>
+          {remaining > 0 && (
+            <p style={{ fontSize: 12, color: 'var(--text-faint)', textAlign: 'center', marginTop: 4 }}>
+              +{remaining} more task{remaining !== 1 ? 's' : ''} waiting
+            </p>
           )}
         </div>
-
-        {/* Session button */}
-        {top3.length > 0 && (
-          <div className="text-center">
+      ) : (
+        /* Empty state */
+        <div style={{ textAlign: 'center', padding: '16px 0 8px' }}>
+          <div style={{ fontSize: 52, marginBottom: 12 }}>🎉</div>
+          <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>All caught up!</p>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>No active tasks. Add something to work on.</p>
+          {onViewChange && (
             <button
-              onClick={() => setSession(v => !v)}
-              className="inline-flex items-center gap-2 transition-all duration-200"
+              onClick={() => onViewChange('today')}
               style={{
-                padding: '10px 24px', borderRadius: 12, fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                background: session ? '#3b82f6' : '#fff',
-                color:      session ? '#fff'    : '#475569',
-                border:     session ? '1.5px solid #3b82f6' : '1.5px solid #e2e8f0',
-                boxShadow:  session ? '0 4px 12px rgba(59,130,246,0.2)' : '0 1px 3px rgba(0,0,0,0.06)',
+                padding: '10px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+                background: 'var(--ig-gradient)', color: '#fff', border: 'none', cursor: 'pointer',
               }}
             >
-              {session ? (
-                <><span style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(255,255,255,0.8)' }} /> Session active</>
-              ) : (
-                <>Start Focus Session <ArrowRight size={13} /></>
-              )}
+              Go to Today
             </button>
-            {session && (
-              <p style={{ fontSize: 12, color: '#94a3b8', marginTop: 10 }}>
-                Close other tabs. Do the work.
-              </p>
+          )}
+        </div>
+      )}
+
+      {/* Pomodoro Timer */}
+      <div style={{
+        background: 'var(--surface)', border: '1px solid var(--border)',
+        borderRadius: 20, padding: '24px 20px', textAlign: 'center',
+      }}>
+        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-faint)', marginBottom: 14 }}>
+          Pomodoro Timer · 25 min
+        </p>
+
+        {/* Countdown */}
+        <div style={{
+          fontSize: 52, fontWeight: 700, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums',
+          marginBottom: 6,
+          ...(isDone ? {
+            background: 'var(--ig-gradient)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+          } : { color: 'var(--text-primary)' }),
+        }}>
+          {pad(mins)}:{pad(secs)}
+        </div>
+
+        {/* Progress bar */}
+        <div style={{ height: 3, borderRadius: 9999, background: 'var(--border-subtle)', marginBottom: 20, overflow: 'hidden' }}>
+          <div style={{
+            height: '100%', width: `${pct}%`, borderRadius: 9999,
+            background: isDone ? 'var(--ig-gradient)' : 'var(--accent)',
+            transition: 'width 1s linear',
+          }} />
+        </div>
+
+        {isDone ? (
+          <div>
+            <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 14 }}>
+              Session complete! Take a 5 min break.
+            </p>
+            <button
+              onClick={reset}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 7,
+                padding: '10px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+                background: 'var(--ig-gradient)', color: '#fff', border: 'none', cursor: 'pointer',
+              }}
+            >
+              <RotateCcw size={13} /> New session
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+            <button
+              onClick={() => setRunning(r => !r)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                padding: '10px 24px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+                background: running ? 'var(--surface-input)' : 'var(--ig-gradient)',
+                color: running ? 'var(--text-secondary)' : '#fff',
+                border: running ? '1.5px solid var(--border)' : 'none',
+                cursor: 'pointer', transition: 'all .15s',
+              }}
+            >
+              {running ? <><Pause size={13} fill="currentColor" /> Pause</> : <><Play size={13} fill="currentColor" /> Start</>}
+            </button>
+            {timeLeft < POMODORO && (
+              <button
+                onClick={reset}
+                style={{
+                  width: 38, height: 38, borderRadius: '50%', border: '1.5px solid var(--border)',
+                  background: 'var(--surface)', color: 'var(--text-muted)', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <RotateCcw size={14} />
+              </button>
             )}
           </div>
         )}
+
+        {running && !isDone && (
+          <p style={{ fontSize: 12, color: 'var(--text-faint)', marginTop: 14 }}>
+            Stay focused. No switching tabs. 🎯
+          </p>
+        )}
       </div>
+
     </div>
   );
 }

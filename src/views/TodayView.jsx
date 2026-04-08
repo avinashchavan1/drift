@@ -54,33 +54,40 @@ export default function TodayView({ categoryFilter, onCategoryClick }) {
   return (
     <div>
       {/* Page heading */}
-      <div className="mb-8">
-        <h1 className="font-semibold tracking-tight text-slate-900" style={{ fontSize: 26, lineHeight: 1.2 }}>
+      <div style={{ marginBottom: 32 }}>
+        <h1 style={{ fontSize: 26, fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1.2, color: 'var(--text-primary)', margin: 0 }}>
           {format(new Date(), 'EEEE')}
         </h1>
-        <p className="mt-1" style={{ fontSize: 13, color: '#94a3b8' }}>
+        <p style={{ marginTop: 4, fontSize: 13, color: 'var(--text-muted)' }}>
           {format(new Date(), 'MMMM d')}
           {totalDue > 0 && (
-            <span style={{ color: '#f97316', fontWeight: 500 }}>&ensp;· {totalDue} due</span>
+            <span style={{ color: 'var(--badge-today-text)', fontWeight: 500 }}>&ensp;· {totalDue} due</span>
           )}
           {categoryFilter && (
-            <span style={{ color: '#3b82f6' }}>&ensp;· #{categoryFilter}</span>
+            <span style={{ color: 'var(--accent)' }}>&ensp;· #{categoryFilter}</span>
           )}
         </p>
       </div>
 
-      <QuickAddInput onAdd={d => addTask.mutate(d)} autoFocus />
+      <QuickAddInput onAdd={d => addTask.mutate(d)} />
 
       {/* Empty state */}
       {isEmpty && (
-        <div className="text-center" style={{ paddingTop: 64 }}>
-          <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4"
-            style={{ background: '#f0fdf4' }}>
+        <div style={{ textAlign: 'center', paddingTop: 64 }}>
+          <div style={{
+            width: 48, height: 48, borderRadius: '50%', background: 'var(--surface-input)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 16px',
+          }}>
             <span style={{ fontSize: 22 }}>✓</span>
           </div>
-          <p style={{ fontSize: 15, fontWeight: 500, color: '#475569' }}>All clear</p>
-          <p style={{ fontSize: 13, color: '#cbd5e1', marginTop: 6 }}>
-            Press <kbd style={{ fontFamily: 'ui-monospace,monospace', background: '#f8fafc', padding: '1px 5px', borderRadius: 4, border: '1px solid #e2e8f0', fontSize: 11 }}>/</kbd> to add something
+          <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-secondary)' }}>All clear</p>
+          <p style={{ fontSize: 13, color: 'var(--text-faint)', marginTop: 6 }}>
+            Press{' '}
+            <kbd style={{ fontFamily: 'ui-monospace,monospace', background: 'var(--surface-input)', padding: '1px 5px', borderRadius: 4, border: '1px solid var(--border)', fontSize: 11, color: 'var(--text-muted)' }}>
+              /
+            </kbd>
+            {' '}to add something
           </p>
         </div>
       )}
@@ -100,22 +107,28 @@ export default function TodayView({ categoryFilter, onCategoryClick }) {
 
       {/* Completed toggle */}
       {completed.length > 0 && (
-        <div className="mt-2">
+        <div style={{ marginTop: 8 }}>
           <button
             onClick={() => setShowCompleted(v => !v)}
-            className="flex items-center gap-2 transition-colors duration-100 hover:text-slate-600"
-            style={{ fontSize: 12, color: '#94a3b8', padding: '6px 2px', width: '100%' }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              fontSize: 12, color: 'var(--text-muted)', padding: '6px 2px',
+              width: '100%', background: 'none', border: 'none', cursor: 'pointer',
+              transition: 'color .1s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-secondary)'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; }}
           >
             {showCompleted
-              ? <ChevronDown  size={13} style={{ color: '#cbd5e1' }} />
-              : <ChevronRight size={13} style={{ color: '#cbd5e1' }} />}
+              ? <ChevronDown  size={13} style={{ color: 'var(--text-faint)' }} />
+              : <ChevronRight size={13} style={{ color: 'var(--text-faint)' }} />}
             <span style={{ fontWeight: 500 }}>{completed.length} completed</span>
           </button>
 
           {showCompleted && (
-            <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #f1f5f9', marginTop: 4 }}>
+            <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)', marginTop: 4 }}>
               {completed.map((t, i) => (
-                <div key={t.id} style={i > 0 ? { borderTop: '1px solid #f8fafc' } : {}}>
+                <div key={t.id} style={i > 0 ? { borderTop: '1px solid var(--border-subtle)' } : {}}>
                   <TaskItem task={t} {...itemProps} />
                 </div>
               ))}

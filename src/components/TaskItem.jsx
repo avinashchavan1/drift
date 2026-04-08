@@ -1,12 +1,19 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Check, Trash2 } from 'lucide-react';
+import { Check, Trash2, Flag, Pencil } from 'lucide-react';
 import DateBadge from './DateBadge';
 import CategoryChip from './CategoryChip';
+import TaskFormSheet from './TaskFormSheet';
+import useIsMobile from '../hooks/useIsMobile';
+
+const PRIORITY_CYCLE = { high: 'medium', medium: 'low', low: null, null: 'high' };
+const PRIORITY_COLOR = { high: '#E1306C', medium: '#FCAF45', low: '#405DE6' };
 
 export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onUpdate, onCategoryClick }) {
   const [completing, setCompleting] = useState(false);
   const [editing,    setEditing]    = useState(false);
   const [editValue,  setEditValue]  = useState(task.title);
+  const [editOpen,   setEditOpen]   = useState(false);
+  const isMobile = useIsMobile();
   const editRef    = useRef(null);
   const touchStart = useRef(null);
   const [swipe,    setSwipe]        = useState(0);
@@ -23,10 +30,16 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
 
   const submitEdit = useCallback(() => {
     const v = editValue.trim();
-    if (v && v !== task.title) onUpdate({ id: task.id, title: v });
+    if (v && v !== task.title) onUpdate({ id: task.id, title: v, dueDate: task.dueDate, category: task.category, priority: task.priority });
     setEditing(false);
     setEditValue(task.title);
   }, [editValue, task, onUpdate]);
+
+  const handlePriority = useCallback(e => {
+    e.stopPropagation();
+    const next = PRIORITY_CYCLE[task.priority ?? 'null'];
+    onUpdate({ id: task.id, title: task.title, dueDate: task.dueDate, category: task.category, priority: next });
+  }, [task, onUpdate]);
 
   const onEditKey = useCallback(e => {
     if (e.key === 'Enter')  submitEdit();
@@ -45,21 +58,36 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
     setSwipe(0); touchStart.current = null;
   };
 
+  const hasMeta = !editing && (task.dueDate || task.category);
+
   if (completing) {
     return (
-      <div className="task-out flex items-center gap-3 px-4 py-3.5 bg-blue-50/40">
-        <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ background: '#3b82f6' }}>
-          <Check size={10} strokeWidth={3} className="text-white" />
+      <div
+        className="task-out flex items-center gap-3 px-4 py-3"
+        style={{ background: 'var(--accent-bg)', opacity: 0.85 }}
+      >
+        <div
+          className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
+          style={{ background: 'var(--ig-gradient)' }}
+        >
+          <Check size={10} strokeWidth={3} style={{ color: '#fff' }} />
         </div>
-        <span className="text-sm text-slate-400 line-through">{task.title}</span>
+        <span style={{ fontSize: 14, color: 'var(--text-muted)', textDecoration: 'line-through' }}>{task.title}</span>
       </div>
     );
   }
 
   return (
     <div
-      className="task-in group flex items-center gap-3 px-4 py-3.5 bg-white hover:bg-slate-50 transition-colors duration-100 cursor-default"
-      style={{ transform: `translateX(${swipe}px)`, transition: swipe === 0 ? 'transform .2s ease, background .1s' : 'none' }}
+      className="task-in group flex items-start gap-3 px-4 py-3"
+      style={{
+        background: 'var(--surface)',
+        transition: swipe === 0 ? 'transform .2s ease, background .1s' : 'none',
+        transform: `translateX(${swipe}px)`,
+        cursor: 'default',
+      }}
+      onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface-hover)'; }}
+      onMouseLeave={e => { e.currentTarget.style.background = 'var(--surface)'; }}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -68,17 +96,17 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
       <button
         onClick={handleCheck}
         aria-label={task.completed ? 'Undo' : 'Complete'}
-        className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-150 hover:scale-110"
+        className="mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-150 hover:scale-110"
         style={task.completed
-          ? { background: '#3b82f6', borderColor: '#3b82f6' }
-          : { borderColor: '#cbd5e1', background: 'transparent' }}
-        onMouseEnter={e => { if (!task.completed) { e.currentTarget.style.borderColor = '#93c5fd'; e.currentTarget.style.background = '#eff6ff'; }}}
-        onMouseLeave={e => { if (!task.completed) { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = 'transparent'; }}}
+          ? { background: 'var(--ig-gradient)', borderColor: 'transparent' }
+          : { borderColor: 'var(--border-strong)', background: 'transparent' }}
+        onMouseEnter={e => { if (!task.completed) { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = 'var(--accent-bg)'; }}}
+        onMouseLeave={e => { if (!task.completed) { e.currentTarget.style.borderColor = 'var(--border-strong)'; e.currentTarget.style.background = 'transparent'; }}}
       >
-        {task.completed && <Check size={10} strokeWidth={3} className="text-white" />}
+        {task.completed && <Check size={10} strokeWidth={3} style={{ color: '#fff' }} />}
       </button>
 
-      {/* Title */}
+      {/* Content column */}
       <div className="flex-1 min-w-0">
         {editing ? (
           <input
@@ -87,44 +115,91 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
             onChange={e => setEditValue(e.target.value)}
             onBlur={submitEdit}
             onKeyDown={onEditKey}
-            className="w-full text-sm text-slate-800 outline-none bg-transparent"
-            style={{ borderBottom: '2px solid #3b82f6', paddingBottom: 1 }}
+            style={{
+              width: '100%', fontSize: 14, color: 'var(--text-primary)',
+              outline: 'none', background: 'transparent',
+              borderBottom: '2px solid var(--accent)', paddingBottom: 1,
+            }}
           />
         ) : (
           <span
             onClick={() => !task.completed && setEditing(true)}
-            className={`text-sm block truncate leading-normal select-none ${
-              task.completed
-                ? 'text-slate-400 line-through'
-                : 'text-slate-800 cursor-text'
-            }`}
+            style={{
+              fontSize: 14, lineHeight: '1.35', display: 'block',
+              userSelect: 'none', cursor: task.completed ? 'default' : 'text',
+              color: task.completed ? 'var(--text-muted)' : 'var(--text-primary)',
+              textDecoration: task.completed ? 'line-through' : 'none',
+            }}
           >
             {task.title}
           </span>
         )}
+
+        {hasMeta && (
+          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+            {task.dueDate  && <DateBadge dueDate={task.dueDate} compact />}
+            {task.category && (
+              <CategoryChip
+                category={task.category}
+                onClick={e => { e.stopPropagation(); onCategoryClick?.(task.category); }}
+                size="xs"
+              />
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Right meta */}
+      {/* Priority + Edit + Delete buttons */}
       {!editing && (
-        <div className="flex items-center gap-2 shrink-0">
-          {task.dueDate  && <DateBadge dueDate={task.dueDate} compact />}
-          {task.category && (
-            <CategoryChip
-              category={task.category}
-              onClick={e => { e.stopPropagation(); onCategoryClick?.(task.category); }}
-              size="xs"
-            />
-          )}
+        <div className="flex items-center gap-1 mt-0.5 shrink-0">
+          <button
+            onClick={handlePriority}
+            aria-label={`Priority: ${task.priority ?? 'none'}`}
+            title={task.priority ? `Priority: ${task.priority} (click to change)` : 'Set priority'}
+            className={task.priority || isMobile ? '' : 'opacity-0 group-hover:opacity-100 transition-opacity duration-150'}
+            style={{
+              color: PRIORITY_COLOR[task.priority] ?? 'var(--text-faint)',
+              background: 'none', border: 'none', cursor: 'pointer',
+              padding: isMobile ? '6px' : 0,
+            }}
+          >
+            <Flag size={isMobile ? 14 : 12} fill={task.priority ? 'currentColor' : 'none'} />
+          </button>
+          <button
+            onClick={e => { e.stopPropagation(); setEditOpen(true); }}
+            aria-label="Edit"
+            className={isMobile ? '' : 'opacity-0 group-hover:opacity-100 transition-opacity duration-150'}
+            style={{
+              color: 'var(--text-faint)', background: 'none', border: 'none', cursor: 'pointer',
+              padding: isMobile ? '6px' : 0,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent)'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-faint)'; }}
+          >
+            <Pencil size={isMobile ? 14 : 12} />
+          </button>
           <button
             onClick={e => { e.stopPropagation(); onDelete(task.id); }}
             aria-label="Delete"
-            className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-slate-300 hover:text-red-400"
-            style={{ marginLeft: 2 }}
+            className={isMobile ? '' : 'opacity-0 group-hover:opacity-100 transition-opacity duration-150'}
+            style={{
+              color: 'var(--text-faint)', background: 'none', border: 'none', cursor: 'pointer',
+              padding: isMobile ? '6px' : 0,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--danger)'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-faint)'; }}
           >
-            <Trash2 size={13} />
+            <Trash2 size={isMobile ? 14 : 13} />
           </button>
         </div>
       )}
+
+      <TaskFormSheet
+        isOpen={editOpen}
+        onClose={() => setEditOpen(false)}
+        initialValues={task}
+        onSave={data => onUpdate(data)}
+      />
     </div>
   );
 }

@@ -4,17 +4,18 @@ import {
   nextFriday, nextSaturday, nextSunday,
 } from 'date-fns';
 
-// Category color palettes — using inline styles to avoid Tailwind JIT purging dynamic class names
+// Category color palettes — CSS variables so they respond to dark/light theme automatically
+// All colours come from Instagram's brand gradient — see INSTAGRAM_DESIGN.md
 export const CATEGORY_PALETTES = {
-  work:     { bg: '#dbeafe', text: '#1d4ed8', dot: '#3b82f6' },
-  health:   { bg: '#dcfce7', text: '#15803d', dot: '#22c55e' },
-  personal: { bg: '#f3e8ff', text: '#7e22ce', dot: '#a855f7' },
-  learning: { bg: '#fef3c7', text: '#92400e', dot: '#f59e0b' },
-  finance:  { bg: '#d1fae5', text: '#065f46', dot: '#10b981' },
-  social:   { bg: '#fce7f3', text: '#9d174d', dot: '#ec4899' },
+  work:     { bg: 'var(--cat-work-bg)',     text: 'var(--cat-work-text)',     dot: 'var(--cat-work-dot)' },
+  health:   { bg: 'var(--cat-health-bg)',   text: 'var(--cat-health-text)',   dot: 'var(--cat-health-dot)' },
+  personal: { bg: 'var(--cat-personal-bg)', text: 'var(--cat-personal-text)', dot: 'var(--cat-personal-dot)' },
+  learning: { bg: 'var(--cat-learning-bg)', text: 'var(--cat-learning-text)', dot: 'var(--cat-learning-dot)' },
+  finance:  { bg: 'var(--cat-finance-bg)',  text: 'var(--cat-finance-text)',  dot: 'var(--cat-finance-dot)' },
+  social:   { bg: 'var(--cat-social-bg)',   text: 'var(--cat-social-text)',   dot: 'var(--cat-social-dot)' },
 };
 
-const DEFAULT_PALETTE = { bg: '#f3f4f6', text: '#4b5563', dot: '#9ca3af' };
+const DEFAULT_PALETTE = { bg: 'var(--cat-default-bg)', text: 'var(--cat-default-text)', dot: 'var(--cat-default-dot)' };
 
 export function getCategoryColor(category) {
   if (!category) return null;
@@ -43,14 +44,26 @@ const DATE_KEYWORDS = [
   { re: /\bin (\d+) days?\b/i,  date: (m, now) => startOfDay(addDays(now, parseInt(m[1]))) },
 ];
 
+// Priority shorthand: !1 or !high → high, !2 or !medium → medium, !3 or !low → low
+const PRIORITY_RE = /\B(!1|!high|!!|!2|!medium|!3|!low)\b/i;
+const PRIORITY_MAP = { '!1': 'high', '!high': 'high', '!!': 'high', '!2': 'medium', '!medium': 'medium', '!3': 'low', '!low': 'low' };
+
 /**
  * Parse natural language task input.
- * Returns { title, dueDate, category }
+ * Returns { title, dueDate, category, priority }
  */
 export function parseTaskInput(raw) {
   let text = raw.trim();
   let dueDate = null;
   let category = null;
+  let priority = null;
+
+  // Extract priority: !1/!high/!!/!2/!medium/!3/!low
+  const priMatch = text.match(PRIORITY_RE);
+  if (priMatch) {
+    priority = PRIORITY_MAP[priMatch[1].toLowerCase()];
+    text = text.replace(priMatch[0], '').trim();
+  }
 
   // Extract category: #tag at any position
   const catMatch = text.match(/#(\w+)/);
@@ -97,6 +110,7 @@ export function parseTaskInput(raw) {
     title: title || raw.trim(),
     dueDate,
     category,
+    priority,
   };
 }
 
